@@ -94,8 +94,8 @@ export function NewAgentDialog() {
     closeNewAgent();
     openNewIssue({
       assigneeAgentId: ceoAgent?.id,
-      title: "Create a new agent",
-      description: "(type in what kind of agent you want here)",
+      title: "创建一个新智能体",
+      description: "（在这里写下你想要创建的智能体类型）",
     });
   }
 

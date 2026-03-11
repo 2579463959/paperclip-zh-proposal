@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+﻿import { useEffect, useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNavigate, useSearchParams } from "@/lib/router";
 import { authApi } from "../api/auth";
@@ -6,6 +6,7 @@ import { queryKeys } from "../lib/queryKeys";
 import { Button } from "@/components/ui/button";
 import { AsciiArtAnimation } from "@/components/AsciiArtAnimation";
 import { Sparkles } from "lucide-react";
+import { useI18n } from "../context/I18nContext";
 
 type AuthMode = "sign_in" | "sign_up";
 
@@ -18,6 +19,7 @@ export function AuthPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
+  const { t } = useI18n();
 
   const nextPath = useMemo(() => searchParams.get("next") || "/", [searchParams]);
   const { data: session, isLoading: isSessionLoading } = useQuery({
@@ -51,7 +53,7 @@ export function AuthPage() {
       navigate(nextPath, { replace: true });
     },
     onError: (err) => {
-      setError(err instanceof Error ? err.message : "Authentication failed");
+      setError(err instanceof Error ? err.message : t("Authentication failed"));
     },
   });
 
@@ -63,14 +65,14 @@ export function AuthPage() {
   if (isSessionLoading) {
     return (
       <div className="fixed inset-0 flex items-center justify-center">
-        <p className="text-sm text-muted-foreground">Loading…</p>
+        <p className="text-sm text-muted-foreground">{t("Loading...")}</p>
       </div>
     );
   }
 
   return (
     <div className="fixed inset-0 flex bg-background">
-      {/* Left half — form */}
+      {/* Left half 鈥?form */}
       <div className="w-full md:w-1/2 flex flex-col overflow-y-auto">
         <div className="w-full max-w-md mx-auto my-auto px-8 py-12">
           <div className="flex items-center gap-2 mb-8">
@@ -79,12 +81,12 @@ export function AuthPage() {
           </div>
 
           <h1 className="text-xl font-semibold">
-            {mode === "sign_in" ? "Sign in to Paperclip" : "Create your Paperclip account"}
+            {mode === "sign_in" ? t("Sign in to Paperclip") : t("Create your Paperclip account")}
           </h1>
           <p className="mt-1 text-sm text-muted-foreground">
             {mode === "sign_in"
-              ? "Use your email and password to access this instance."
-              : "Create an account for this instance. Email confirmation is not required in v1."}
+              ? t("Use your email and password to access this instance.")
+              : t("Create an account for this instance. Email confirmation is not required in v1.")}
           </p>
 
           <form
@@ -96,7 +98,7 @@ export function AuthPage() {
           >
             {mode === "sign_up" && (
               <div>
-                <label className="text-xs text-muted-foreground mb-1 block">Name</label>
+                <label className="text-xs text-muted-foreground mb-1 block">{t("Name")}</label>
                 <input
                   className="w-full rounded-md border border-border bg-transparent px-3 py-2 text-sm outline-none focus:ring-1 focus:ring-ring placeholder:text-muted-foreground/50"
                   value={name}
@@ -107,7 +109,7 @@ export function AuthPage() {
               </div>
             )}
             <div>
-              <label className="text-xs text-muted-foreground mb-1 block">Email</label>
+              <label className="text-xs text-muted-foreground mb-1 block">{t("Email")}</label>
               <input
                 className="w-full rounded-md border border-border bg-transparent px-3 py-2 text-sm outline-none focus:ring-1 focus:ring-ring placeholder:text-muted-foreground/50"
                 type="email"
@@ -118,7 +120,7 @@ export function AuthPage() {
               />
             </div>
             <div>
-              <label className="text-xs text-muted-foreground mb-1 block">Password</label>
+              <label className="text-xs text-muted-foreground mb-1 block">{t("Password")}</label>
               <input
                 className="w-full rounded-md border border-border bg-transparent px-3 py-2 text-sm outline-none focus:ring-1 focus:ring-ring placeholder:text-muted-foreground/50"
                 type="password"
@@ -130,15 +132,15 @@ export function AuthPage() {
             {error && <p className="text-xs text-destructive">{error}</p>}
             <Button type="submit" disabled={!canSubmit || mutation.isPending} className="w-full">
               {mutation.isPending
-                ? "Working…"
+                ? t("Working...")
                 : mode === "sign_in"
-                  ? "Sign In"
-                  : "Create Account"}
+                  ? t("Sign In")
+                  : t("Create Account")}
             </Button>
           </form>
 
           <div className="mt-5 text-sm text-muted-foreground">
-            {mode === "sign_in" ? "Need an account?" : "Already have an account?"}{" "}
+            {mode === "sign_in" ? t("Need an account?") : t("Already have an account?")}{" "}
             <button
               type="button"
               className="font-medium text-foreground underline underline-offset-2"
@@ -147,16 +149,17 @@ export function AuthPage() {
                 setMode(mode === "sign_in" ? "sign_up" : "sign_in");
               }}
             >
-              {mode === "sign_in" ? "Create one" : "Sign in"}
+              {mode === "sign_in" ? t("Create one") : t("Sign in")}
             </button>
           </div>
         </div>
       </div>
 
-      {/* Right half — ASCII art animation (hidden on mobile) */}
+      {/* Right half 鈥?ASCII art animation (hidden on mobile) */}
       <div className="hidden md:block w-1/2 overflow-hidden">
         <AsciiArtAnimation />
       </div>
     </div>
   );
 }
+

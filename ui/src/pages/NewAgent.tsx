@@ -3,6 +3,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useNavigate, useSearchParams } from "@/lib/router";
 import { useCompany } from "../context/CompanyContext";
 import { useBreadcrumbs } from "../context/BreadcrumbContext";
+import { useI18n } from "../context/I18nContext";
 import { agentsApi } from "../api/agents";
 import { queryKeys } from "../lib/queryKeys";
 import { AGENT_ROLES } from "@paperclipai/shared";
@@ -21,7 +22,6 @@ import { getUIAdapter } from "../adapters";
 import { AgentIcon } from "../components/AgentIconPicker";
 import {
   DEFAULT_CODEX_LOCAL_BYPASS_APPROVALS_AND_SANDBOX,
-  DEFAULT_CODEX_LOCAL_MODEL,
 } from "@paperclipai/adapter-codex-local";
 import { DEFAULT_CURSOR_LOCAL_MODEL } from "@paperclipai/adapter-cursor-local";
 
@@ -40,7 +40,7 @@ function createValuesForAdapterType(
   const { adapterType: _discard, ...defaults } = defaultCreateValues;
   const nextValues: CreateConfigValues = { ...defaults, adapterType };
   if (adapterType === "codex_local") {
-    nextValues.model = DEFAULT_CODEX_LOCAL_MODEL;
+    nextValues.model = "";
     nextValues.dangerouslyBypassSandbox =
       DEFAULT_CODEX_LOCAL_BYPASS_APPROVALS_AND_SANDBOX;
   } else if (adapterType === "cursor") {
@@ -54,6 +54,7 @@ function createValuesForAdapterType(
 export function NewAgent() {
   const { selectedCompanyId } = useCompany();
   const { setBreadcrumbs } = useBreadcrumbs();
+  const { t } = useI18n();
   const queryClient = useQueryClient();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
@@ -190,9 +191,9 @@ export function NewAgent() {
   return (
     <div className="mx-auto max-w-2xl space-y-6">
       <div>
-        <h1 className="text-lg font-semibold">New Agent</h1>
+        <h1 className="text-lg font-semibold">{t("New Agent")}</h1>
         <p className="text-sm text-muted-foreground mt-1">
-          Advanced agent configuration
+          {t("Advanced agent configuration")}
         </p>
       </div>
 
@@ -201,7 +202,7 @@ export function NewAgent() {
         <div className="px-4 pt-4 pb-2">
           <input
             className="w-full text-lg font-semibold bg-transparent outline-none placeholder:text-muted-foreground/50"
-            placeholder="Agent name"
+            placeholder={t("Agent name")}
             value={name}
             onChange={(e) => setName(e.target.value)}
             autoFocus
@@ -212,7 +213,7 @@ export function NewAgent() {
         <div className="px-4 pb-2">
           <input
             className="w-full bg-transparent outline-none text-sm text-muted-foreground placeholder:text-muted-foreground/40"
-            placeholder="Title (e.g. VP of Engineering)"
+            placeholder={t("Title (e.g. VP of Engineering)")}
             value={title}
             onChange={(e) => setTitle(e.target.value)}
           />
@@ -261,12 +262,12 @@ export function NewAgent() {
                 {currentReportsTo ? (
                   <>
                     <AgentIcon icon={currentReportsTo.icon} className="h-3 w-3 text-muted-foreground" />
-                    {`Reports to ${currentReportsTo.name}`}
+                    {t("Reports to {name}", { name: currentReportsTo.name })}
                   </>
                 ) : (
                   <>
                     <User className="h-3 w-3 text-muted-foreground" />
-                    {isFirstAgent ? "Reports to: N/A (CEO)" : "Reports to..."}
+                    {isFirstAgent ? t("Reports to: N/A (CEO)") : t("Reports to...")}
                   </>
                 )}
               </button>

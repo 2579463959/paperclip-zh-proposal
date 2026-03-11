@@ -3,6 +3,7 @@ import { Identity } from "./Identity";
 import { timeAgo } from "../lib/timeAgo";
 import { cn } from "../lib/utils";
 import { deriveProjectUrlKey, type ActivityEvent, type Agent } from "@paperclipai/shared";
+import { useI18n } from "../context/I18nContext";
 
 const ACTION_VERBS: Record<string, string> = {
   "issue.created": "created",
@@ -85,6 +86,7 @@ interface ActivityRowProps {
 }
 
 export function ActivityRow({ event, agentMap, entityNameMap, entityTitleMap, className }: ActivityRowProps) {
+  const { t } = useI18n();
   const verb = formatVerb(event.action, event.details);
 
   const isHeartbeatEvent = event.entityType === "heartbeat_run";
@@ -103,7 +105,7 @@ export function ActivityRow({ event, agentMap, entityNameMap, entityTitleMap, cl
     : entityLink(event.entityType, event.entityId, name);
 
   const actor = event.actorType === "agent" ? agentMap.get(event.actorId) : null;
-  const actorName = actor?.name ?? (event.actorType === "system" ? "System" : event.actorType === "user" ? "Board" : event.actorId || "Unknown");
+  const actorName = actor?.name ?? (event.actorType === "system" ? t("System") : event.actorType === "user" ? t("Board") : event.actorId || t("Unknown"));
 
   const inner = (
     <div className="flex gap-3">
@@ -113,7 +115,7 @@ export function ActivityRow({ event, agentMap, entityNameMap, entityTitleMap, cl
           size="xs"
           className="align-baseline"
         />
-        <span className="text-muted-foreground ml-1">{verb} </span>
+        <span className="text-muted-foreground ml-1">{t(verb)} </span>
         {name && <span className="font-medium">{name}</span>}
         {entityTitle && <span className="text-muted-foreground ml-1">— {entityTitle}</span>}
       </p>

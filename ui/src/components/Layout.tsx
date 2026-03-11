@@ -19,6 +19,7 @@ import { usePanel } from "../context/PanelContext";
 import { useCompany } from "../context/CompanyContext";
 import { useSidebar } from "../context/SidebarContext";
 import { useTheme } from "../context/ThemeContext";
+import { useI18n } from "../context/I18nContext";
 import { useKeyboardShortcuts } from "../hooks/useKeyboardShortcuts";
 import { useCompanyPageMemory } from "../hooks/useCompanyPageMemory";
 import { healthApi } from "../api/health";
@@ -32,6 +33,7 @@ export function Layout() {
   const { togglePanelVisible } = usePanel();
   const { companies, loading: companiesLoading, selectedCompanyId, setSelectedCompanyId } = useCompany();
   const { theme, toggleTheme } = useTheme();
+  const { locale, toggleLocale, t } = useI18n();
   const { companyPrefix } = useParams<{ companyPrefix: string }>();
   const navigate = useNavigate();
   const location = useLocation();
@@ -39,6 +41,8 @@ export function Layout() {
   const lastMainScrollTop = useRef(0);
   const [mobileNavVisible, setMobileNavVisible] = useState(true);
   const nextTheme = theme === "dark" ? "light" : "dark";
+  const nextThemeLabel = t(nextTheme);
+  const languageToggleLabel = locale === "zh-CN" ? "EN" : "中文";
   const { data: health } = useQuery({
     queryKey: queryKeys.health,
     queryFn: () => healthApi.get(),
@@ -189,16 +193,16 @@ export function Layout() {
         href="#main-content"
         className="sr-only focus:not-sr-only focus:fixed focus:left-3 focus:top-3 focus:z-[200] focus:rounded-md focus:bg-background focus:px-3 focus:py-2 focus:text-sm focus:font-medium focus:shadow-lg focus:outline-none focus-visible:ring-2 focus-visible:ring-ring"
       >
-        Skip to Main Content
+        {t("Skip to Main Content")}
       </a>
       {/* Mobile backdrop */}
       {isMobile && sidebarOpen && (
-        <button
-          type="button"
-          className="fixed inset-0 z-40 bg-black/50"
-          onClick={() => setSidebarOpen(false)}
-          aria-label="Close sidebar"
-        />
+          <button
+            type="button"
+            className="fixed inset-0 z-40 bg-black/50"
+            onClick={() => setSidebarOpen(false)}
+            aria-label={t("Close sidebar")}
+          />
       )}
 
       {/* Combined sidebar area: company rail + inner sidebar + docs bar */}
@@ -217,18 +221,29 @@ export function Layout() {
             <div className="flex items-center gap-1">
               <SidebarNavItem
                 to="/docs"
-                label="Documentation"
+                label={t("Documentation")}
                 icon={BookOpen}
                 className="flex-1 min-w-0"
               />
               <Button
                 type="button"
                 variant="ghost"
+                size="sm"
+                className="shrink-0 px-2 text-xs text-muted-foreground"
+                onClick={toggleLocale}
+                aria-label={t("Language")}
+                title={t("Language")}
+              >
+                {languageToggleLabel}
+              </Button>
+              <Button
+                type="button"
+                variant="ghost"
                 size="icon-sm"
                 className="text-muted-foreground shrink-0"
                 onClick={toggleTheme}
-                aria-label={`Switch to ${nextTheme} mode`}
-                title={`Switch to ${nextTheme} mode`}
+                aria-label={t("Switch to {theme} mode", { theme: nextThemeLabel })}
+                title={t("Switch to {theme} mode", { theme: nextThemeLabel })}
               >
                 {theme === "dark" ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
               </Button>
@@ -252,18 +267,29 @@ export function Layout() {
             <div className="flex items-center gap-1">
               <SidebarNavItem
                 to="/docs"
-                label="Documentation"
+                label={t("Documentation")}
                 icon={BookOpen}
                 className="flex-1 min-w-0"
               />
               <Button
                 type="button"
                 variant="ghost"
+                size="sm"
+                className="shrink-0 px-2 text-xs text-muted-foreground"
+                onClick={toggleLocale}
+                aria-label={t("Language")}
+                title={t("Language")}
+              >
+                {languageToggleLabel}
+              </Button>
+              <Button
+                type="button"
+                variant="ghost"
                 size="icon-sm"
                 className="text-muted-foreground shrink-0"
                 onClick={toggleTheme}
-                aria-label={`Switch to ${nextTheme} mode`}
-                title={`Switch to ${nextTheme} mode`}
+                aria-label={t("Switch to {theme} mode", { theme: nextThemeLabel })}
+                title={t("Switch to {theme} mode", { theme: nextThemeLabel })}
               >
                 {theme === "dark" ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
               </Button>

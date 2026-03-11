@@ -1,5 +1,6 @@
 /// <reference path="./types/express.d.ts" />
 import { existsSync, readFileSync, rmSync } from "node:fs";
+import { randomBytes } from "node:crypto";
 import { createServer } from "node:http";
 import { resolve } from "node:path";
 import { createInterface } from "node:readline/promises";
@@ -68,6 +69,9 @@ export interface StartedServer {
 
 export async function startServer(): Promise<StartedServer> {
   const config = loadConfig();
+  if (config.deploymentMode === "local_trusted" && !process.env.PAPERCLIP_AGENT_JWT_SECRET?.trim()) {
+    process.env.PAPERCLIP_AGENT_JWT_SECRET = randomBytes(32).toString("hex");
+  }
   if (process.env.PAPERCLIP_SECRETS_PROVIDER === undefined) {
     process.env.PAPERCLIP_SECRETS_PROVIDER = config.secretsProvider;
   }

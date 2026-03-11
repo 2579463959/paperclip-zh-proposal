@@ -61,6 +61,39 @@ function resolveCodexBillingType(env: Record<string, string>): "api" | "subscrip
   return hasNonEmptyEnvValue(env, "OPENAI_API_KEY") ? "api" : "subscription";
 }
 
+function asNonNegativeNumber(value: unknown, fallback: number): number {
+  const parsed = Number(value);
+  return Number.isFinite(parsed) && parsed >= 0 ? parsed : fallback;
+}
+
+function resolveCodexPricing(config: Record<string, unknown>) {
+  return {
+    inputUsdPer1M: asNonNegativeNumber(config.inputUsdPer1M ?? config.pricingInputUsdPer1M, 1.75),
+    outputUsdPer1M: asNonNegativeNumber(config.outputUsdPer1M ?? config.pricingOutputUsdPer1M, 14),
+    cachedInputUsdPer1M: asNonNegativeNumber(
+      config.cachedInputUsdPer1M ?? config.pricingCachedInputUsdPer1M,
+      0,
+    ),
+  };
+}
+
+export function calculateCodexUsageCostUsd(
+  usage: { inputTokens?: number; cachedInputTokens?: number; outputTokens?: number } | null | undefined,
+  pricing: { inputUsdPer1M: number; outputUsdPer1M: number; cachedInputUsdPer1M: number },
+): number {
+  const inputTokens = Math.max(0, Number(usage?.inputTokens ?? 0));
+  const cachedInputTokens = Math.max(0, Math.min(inputTokens, Number(usage?.cachedInputTokens ?? 0)));
+  const outputTokens = Math.max(0, Number(usage?.outputTokens ?? 0));
+  const uncachedInputTokens = Math.max(0, inputTokens - cachedInputTokens);
+
+  const costUsd =
+    (uncachedInputTokens / 1_000_000) * pricing.inputUsdPer1M +
+    (cachedInputTokens / 1_000_000) * pricing.cachedInputUsdPer1M +
+    (outputTokens / 1_000_000) * pricing.outputUsdPer1M;
+
+  return Number.isFinite(costUsd) ? costUsd : 0;
+}
+
 function codexHomeDir(): string {
   const fromEnv = process.env.CODEX_HOME;
   if (typeof fromEnv === "string" && fromEnv.trim().length > 0) return fromEnv.trim();
@@ -216,6 +249,7 @@ export async function execute(ctx: AdapterExecutionContext): Promise<AdapterExec
 
   const timeoutSec = asNumber(config.timeoutSec, 0);
   const graceSec = asNumber(config.graceSec, 20);
+  const pricing = resolveCodexPricing(parseObject(config));
   const extraArgs = (() => {
     const fromExtraArgs = asStringArray(config.extraArgs);
     if (fromExtraArgs.length > 0) return fromExtraArgs;
@@ -368,6 +402,8 @@ export async function execute(ctx: AdapterExecutionContext): Promise<AdapterExec
       stderrLine ||
       `Codex exited with code ${attempt.proc.exitCode ?? -1}`;
 
+    const costUsd = calculateCodexUsageCostUsd(attempt.parsed.usage, pricing);
+
     return {
       exitCode: attempt.proc.exitCode,
       signal: attempt.proc.signal,
@@ -383,7 +419,7 @@ export async function execute(ctx: AdapterExecutionContext): Promise<AdapterExec
       provider: "openai",
       model,
       billingType,
-      costUsd: null,
+      costUsd,
       resultJson: {
         stdout: attempt.proc.stdout,
         stderr: attempt.proc.stderr,

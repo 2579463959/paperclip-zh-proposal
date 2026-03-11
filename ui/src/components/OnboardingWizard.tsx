@@ -4,6 +4,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import type { AdapterEnvironmentTestResult } from "@paperclipai/shared";
 import { useDialog } from "../context/DialogContext";
 import { useCompany } from "../context/CompanyContext";
+import { useI18n } from "../context/I18nContext";
 import { companiesApi } from "../api/companies";
 import { goalsApi } from "../api/goals";
 import { agentsApi } from "../api/agents";
@@ -22,7 +23,6 @@ import { getUIAdapter } from "../adapters";
 import { defaultCreateValues } from "./agent-config-defaults";
 import {
   DEFAULT_CODEX_LOCAL_BYPASS_APPROVALS_AND_SANDBOX,
-  DEFAULT_CODEX_LOCAL_MODEL
 } from "@paperclipai/adapter-codex-local";
 import { DEFAULT_CURSOR_LOCAL_MODEL } from "@paperclipai/adapter-cursor-local";
 import { AsciiArtAnimation } from "./AsciiArtAnimation";
@@ -58,15 +58,16 @@ type AdapterType =
   | "http"
   | "openclaw_gateway";
 
-const DEFAULT_TASK_DESCRIPTION = `Setup yourself as the CEO. Use the ceo persona found here: [https://github.com/paperclipai/companies/blob/main/default/ceo/AGENTS.md](https://github.com/paperclipai/companies/blob/main/default/ceo/AGENTS.md)
+const DEFAULT_TASK_DESCRIPTION = `请先把自己设置为 CEO。可参考这里的 ceo persona： [https://github.com/paperclipai/companies/blob/main/default/ceo/AGENTS.md](https://github.com/paperclipai/companies/blob/main/default/ceo/AGENTS.md)
 
-Ensure you have a folder agents/ceo and then download this AGENTS.md as well as the sibling HEARTBEAT.md, SOUL.md, and TOOLS.md. and set that AGENTS.md as the path to your agents instruction file
+请确保你已经创建了 agents/ceo 文件夹，并下载其中的 AGENTS.md 以及同级的 HEARTBEAT.md、SOUL.md、TOOLS.md，然后把该 AGENTS.md 设置为你的智能体说明文件路径。
 
-And after you've finished that, hire yourself a Founding Engineer agent`;
+完成之后，再为自己招聘一个创始工程师智能体。`;
 
 export function OnboardingWizard() {
   const { onboardingOpen, onboardingOptions, closeOnboarding } = useDialog();
   const { selectedCompanyId, companies, setSelectedCompanyId } = useCompany();
+  const { t } = useI18n();
   const queryClient = useQueryClient();
   const navigate = useNavigate();
 
@@ -267,7 +268,7 @@ export function OnboardingWizard() {
       cwd,
       model:
         adapterType === "codex_local"
-          ? model || DEFAULT_CODEX_LOCAL_MODEL
+          ? model
           : adapterType === "cursor"
             ? model || DEFAULT_CURSOR_LOCAL_MODEL
           : model,
@@ -538,7 +539,7 @@ export function OnboardingWizard() {
             className="absolute top-4 left-4 z-10 rounded-sm p-1.5 text-muted-foreground/60 hover:text-foreground transition-colors"
           >
             <X className="h-5 w-5" />
-            <span className="sr-only">Close</span>
+            <span className="sr-only">{t("Close sidebar")}</span>
           </button>
 
           {/* Left half — form */}
@@ -547,9 +548,9 @@ export function OnboardingWizard() {
               {/* Progress indicators */}
               <div className="flex items-center gap-2 mb-8">
                 <Sparkles className="h-4 w-4 text-muted-foreground" />
-                <span className="text-sm font-medium">Get Started</span>
+                <span className="text-sm font-medium">{t("Get Started")}</span>
                 <span className="text-sm text-muted-foreground/60">
-                  Step {step} of 4
+                  {t("Step {step} of 4", { step })}
                 </span>
                 <div className="flex items-center gap-1.5 ml-auto">
                   {[1, 2, 3, 4].map((s) => (
@@ -576,19 +577,19 @@ export function OnboardingWizard() {
                       <Building2 className="h-5 w-5 text-muted-foreground" />
                     </div>
                     <div>
-                      <h3 className="font-medium">Name your company</h3>
+                      <h3 className="font-medium">{t("Name your company")}</h3>
                       <p className="text-xs text-muted-foreground">
-                        This is the organization your agents will work for.
+                        {t("This is the organization your agents will work for.")}
                       </p>
                     </div>
                   </div>
                   <div>
                     <label className="text-xs text-muted-foreground mb-1 block">
-                      Company name
+                      {t("Company name")}
                     </label>
                     <input
                       className="w-full rounded-md border border-border bg-transparent px-3 py-2 text-sm outline-none focus:ring-1 focus:ring-ring placeholder:text-muted-foreground/50"
-                      placeholder="Acme Corp"
+                      placeholder={t("Acme Corp")}
                       value={companyName}
                       onChange={(e) => setCompanyName(e.target.value)}
                       autoFocus
@@ -596,11 +597,11 @@ export function OnboardingWizard() {
                   </div>
                   <div>
                     <label className="text-xs text-muted-foreground mb-1 block">
-                      Mission / goal (optional)
+                      {t("Mission / goal (optional)")}
                     </label>
                     <textarea
                       className="w-full rounded-md border border-border bg-transparent px-3 py-2 text-sm outline-none focus:ring-1 focus:ring-ring placeholder:text-muted-foreground/50 resize-none min-h-[60px]"
-                      placeholder="What is this company trying to achieve?"
+                      placeholder={t("What is this company trying to achieve?")}
                       value={companyGoal}
                       onChange={(e) => setCompanyGoal(e.target.value)}
                     />
@@ -615,9 +616,9 @@ export function OnboardingWizard() {
                       <Bot className="h-5 w-5 text-muted-foreground" />
                     </div>
                     <div>
-                      <h3 className="font-medium">Create your first agent</h3>
+                      <h3 className="font-medium">{t("Create your first agent")}</h3>
                       <p className="text-xs text-muted-foreground">
-                        Choose how this agent will run tasks.
+                        {t("Choose how this agent will run tasks.")}
                       </p>
                     </div>
                   </div>
@@ -697,9 +698,7 @@ export function OnboardingWizard() {
                             if (opt.comingSoon) return;
                             const nextType = opt.value as AdapterType;
                             setAdapterType(nextType);
-                            if (nextType === "codex_local" && !model) {
-                              setModel(DEFAULT_CODEX_LOCAL_MODEL);
-                            } else if (nextType === "cursor" && !model) {
+                            if (nextType === "cursor" && !model) {
                               setModel(DEFAULT_CURSOR_LOCAL_MODEL);
                             }
                             if (nextType === "opencode_local") {
@@ -989,7 +988,7 @@ export function OnboardingWizard() {
                       <ListTodo className="h-5 w-5 text-muted-foreground" />
                     </div>
                     <div>
-                      <h3 className="font-medium">Give it something to do</h3>
+                      <h3 className="font-medium">{t("Give it something to do")}</h3>
                       <p className="text-xs text-muted-foreground">
                         Give your agent a small task to start with — a bug fix,
                         a research question, writing a script.
@@ -1030,7 +1029,7 @@ export function OnboardingWizard() {
                       <Rocket className="h-5 w-5 text-muted-foreground" />
                     </div>
                     <div>
-                      <h3 className="font-medium">Ready to launch</h3>
+                      <h3 className="font-medium">{t("Ready to launch")}</h3>
                       <p className="text-xs text-muted-foreground">
                         Everything is set up. Your assigned task already woke
                         the agent, so you can jump straight to the issue.
@@ -1092,7 +1091,7 @@ export function OnboardingWizard() {
                       disabled={loading}
                     >
                       <ArrowLeft className="h-3.5 w-3.5 mr-1" />
-                      Back
+                      {t("Back")}
                     </Button>
                   )}
                 </div>
@@ -1108,7 +1107,7 @@ export function OnboardingWizard() {
                       ) : (
                         <ArrowRight className="h-3.5 w-3.5 mr-1" />
                       )}
-                      {loading ? "Creating..." : "Next"}
+                      {loading ? t("Creating...") : t("Next")}
                     </Button>
                   )}
                   {step === 2 && (
@@ -1124,7 +1123,7 @@ export function OnboardingWizard() {
                       ) : (
                         <ArrowRight className="h-3.5 w-3.5 mr-1" />
                       )}
-                      {loading ? "Creating..." : "Next"}
+                      {loading ? t("Creating...") : t("Next")}
                     </Button>
                   )}
                   {step === 3 && (
@@ -1138,7 +1137,7 @@ export function OnboardingWizard() {
                       ) : (
                         <ArrowRight className="h-3.5 w-3.5 mr-1" />
                       )}
-                      {loading ? "Creating..." : "Next"}
+                      {loading ? t("Creating...") : t("Next")}
                     </Button>
                   )}
                   {step === 4 && (
@@ -1148,7 +1147,7 @@ export function OnboardingWizard() {
                       ) : (
                         <ArrowRight className="h-3.5 w-3.5 mr-1" />
                       )}
-                      {loading ? "Opening..." : "Open Issue"}
+                      {loading ? t("Opening...") : t("Open Issue")}
                     </Button>
                   )}
                 </div>

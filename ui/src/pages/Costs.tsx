@@ -3,6 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { costsApi } from "../api/costs";
 import { useCompany } from "../context/CompanyContext";
 import { useBreadcrumbs } from "../context/BreadcrumbContext";
+import { useI18n } from "../context/I18nContext";
 import { queryKeys } from "../lib/queryKeys";
 import { EmptyState } from "../components/EmptyState";
 import { PageSkeleton } from "../components/PageSkeleton";
@@ -54,6 +55,7 @@ function computeRange(preset: DatePreset): { from: string; to: string } {
 export function Costs() {
   const { selectedCompanyId } = useCompany();
   const { setBreadcrumbs } = useBreadcrumbs();
+  const { t } = useI18n();
 
   const [preset, setPreset] = useState<DatePreset>("mtd");
   const [customFrom, setCustomFrom] = useState("");
@@ -107,7 +109,7 @@ export function Costs() {
             size="sm"
             onClick={() => setPreset(p)}
           >
-            {PRESET_LABELS[p]}
+            {t(PRESET_LABELS[p])}
           </Button>
         ))}
         {preset === "custom" && (
@@ -118,7 +120,7 @@ export function Costs() {
               onChange={(e) => setCustomFrom(e.target.value)}
               className="h-8 rounded-md border border-input bg-background px-2 text-sm text-foreground"
             />
-            <span className="text-sm text-muted-foreground">to</span>
+            <span className="text-sm text-muted-foreground">{t("to")}</span>
             <input
               type="date"
               value={customTo}
@@ -149,7 +151,7 @@ export function Costs() {
                 <span className="text-base font-normal text-muted-foreground">
                   {data.summary.budgetCents > 0
                     ? `/ ${formatCents(data.summary.budgetCents)}`
-                    : "Unlimited budget"}
+                    : t("Unlimited budget")}
                 </span>
               </p>
               {data.summary.budgetCents > 0 && (
@@ -173,9 +175,9 @@ export function Costs() {
           <div className="grid md:grid-cols-2 gap-4">
             <Card>
               <CardContent className="p-4">
-                <h3 className="text-sm font-semibold mb-3">By Agent</h3>
+                <h3 className="text-sm font-semibold mb-3">{t("By Agent")}</h3>
                 {data.byAgent.length === 0 ? (
-                  <p className="text-sm text-muted-foreground">No cost events yet.</p>
+                  <p className="text-sm text-muted-foreground">{t("No cost events yet.")}</p>
                 ) : (
                   <div className="space-y-2">
                     {data.byAgent.map((row) => (
@@ -195,14 +197,14 @@ export function Costs() {
                         <div className="text-right shrink-0 ml-2">
                           <span className="font-medium block">{formatCents(row.costCents)}</span>
                           <span className="text-xs text-muted-foreground block">
-                            in {formatTokens(row.inputTokens)} / out {formatTokens(row.outputTokens)} tok
+                            {t("in")} {formatTokens(row.inputTokens)} / {t("out")} {formatTokens(row.outputTokens)} {t("tok")}
                           </span>
                           {(row.apiRunCount > 0 || row.subscriptionRunCount > 0) && (
                             <span className="text-xs text-muted-foreground block">
-                              {row.apiRunCount > 0 ? `api runs: ${row.apiRunCount}` : null}
+                              {row.apiRunCount > 0 ? `${t("api runs")}: ${row.apiRunCount}` : null}
                               {row.apiRunCount > 0 && row.subscriptionRunCount > 0 ? " | " : null}
                               {row.subscriptionRunCount > 0
-                                ? `subscription runs: ${row.subscriptionRunCount} (${formatTokens(row.subscriptionInputTokens)} in / ${formatTokens(row.subscriptionOutputTokens)} out tok)`
+                                ? `${t("subscription runs")}: ${row.subscriptionRunCount} (${formatTokens(row.subscriptionInputTokens)} ${t("in")} / ${formatTokens(row.subscriptionOutputTokens)} ${t("out")} ${t("tok")})`
                                 : null}
                             </span>
                           )}
@@ -216,9 +218,9 @@ export function Costs() {
 
             <Card>
               <CardContent className="p-4">
-                <h3 className="text-sm font-semibold mb-3">By Project</h3>
+                <h3 className="text-sm font-semibold mb-3">{t("By Project")}</h3>
                 {data.byProject.length === 0 ? (
-                  <p className="text-sm text-muted-foreground">No project-attributed run costs yet.</p>
+                  <p className="text-sm text-muted-foreground">{t("No project-attributed run costs yet.")}</p>
                 ) : (
                   <div className="space-y-2">
                     {data.byProject.map((row) => (
@@ -227,7 +229,7 @@ export function Costs() {
                         className="flex items-center justify-between text-sm"
                       >
                         <span className="truncate">
-                          {row.projectName ?? row.projectId ?? "Unattributed"}
+                          {row.projectName ?? row.projectId ?? t("Unattributed")}
                         </span>
                         <span className="font-medium">{formatCents(row.costCents)}</span>
                       </div>

@@ -10,6 +10,7 @@ import { agentsApi } from "../api/agents";
 import { heartbeatsApi } from "../api/heartbeats";
 import { useCompany } from "../context/CompanyContext";
 import { useBreadcrumbs } from "../context/BreadcrumbContext";
+import { useI18n } from "../context/I18nContext";
 import { queryKeys } from "../lib/queryKeys";
 import { StatusIcon } from "../components/StatusIcon";
 import { PriorityIcon } from "../components/PriorityIcon";
@@ -178,12 +179,13 @@ function FailedRunCard({
   agentName: string | null;
   onDismiss: () => void;
 }) {
+  const { t } = useI18n();
   const queryClient = useQueryClient();
   const navigate = useNavigate();
   const issueId = readIssueIdFromRun(run);
   const issue = issueId ? issueById.get(issueId) ?? null : null;
-  const sourceLabel = RUN_SOURCE_LABELS[run.invocationSource] ?? "Manual";
-  const displayError = runFailureMessage(run);
+  const sourceLabel = t(RUN_SOURCE_LABELS[run.invocationSource] ?? "Manual");
+  const displayError = t(runFailureMessage(run));
 
   const retryRun = useMutation({
     mutationFn: async () => {
@@ -219,7 +221,7 @@ function FailedRunCard({
         type="button"
         onClick={onDismiss}
         className="absolute right-2 top-2 z-10 rounded-md p-1 text-muted-foreground opacity-0 transition-opacity hover:bg-accent hover:text-foreground group-hover:opacity-100"
-        aria-label="Dismiss"
+        aria-label={t("Dismiss")}
       >
         <X className="h-4 w-4" />
       </button>
@@ -236,7 +238,7 @@ function FailedRunCard({
           </Link>
         ) : (
           <span className="block text-sm text-muted-foreground">
-            {run.errorCode ? `Error code: ${run.errorCode}` : "No linked issue"}
+            {run.errorCode ? `${t("Error code:")} ${run.errorCode}` : t("No linked issue")}
           </span>
         )}
 
@@ -249,12 +251,12 @@ function FailedRunCard({
               {linkedAgentName ? (
                 <Identity name={linkedAgentName} size="sm" />
               ) : (
-                <span className="text-sm font-medium">Agent {run.agentId.slice(0, 8)}</span>
+                <span className="text-sm font-medium">{t("Agent")} {run.agentId.slice(0, 8)}</span>
               )}
               <StatusBadge status={run.status} />
             </div>
             <p className="mt-2 text-xs text-muted-foreground">
-              {sourceLabel} run failed {timeAgo(run.createdAt)}
+              {sourceLabel} {t("run failed")} {timeAgo(run.createdAt)}
             </p>
           </div>
           <div className="flex w-full flex-wrap items-center gap-2 sm:w-auto sm:justify-end">
@@ -277,7 +279,7 @@ function FailedRunCard({
               asChild
             >
               <Link to={`/agents/${run.agentId}/runs/${run.id}`}>
-                Open run
+                {t("Open run")}
                 <ArrowUpRight className="ml-1.5 h-3.5 w-3.5" />
               </Link>
             </Button>
@@ -289,12 +291,12 @@ function FailedRunCard({
         </div>
 
         <div className="text-xs">
-          <span className="font-mono text-muted-foreground">run {run.id.slice(0, 8)}</span>
+          <span className="font-mono text-muted-foreground">{t("Run")} {run.id.slice(0, 8)}</span>
         </div>
 
         {retryRun.isError && (
           <div className="text-xs text-destructive">
-            {retryRun.error instanceof Error ? retryRun.error.message : "Failed to retry run"}
+            {retryRun.error instanceof Error ? t(retryRun.error.message) : t("Failed to retry run")}
           </div>
         )}
       </div>
@@ -305,6 +307,7 @@ function FailedRunCard({
 export function Inbox() {
   const { selectedCompanyId } = useCompany();
   const { setBreadcrumbs } = useBreadcrumbs();
+  const { t } = useI18n();
   const navigate = useNavigate();
   const location = useLocation();
   const queryClient = useQueryClient();
@@ -323,8 +326,8 @@ export function Inbox() {
   });
 
   useEffect(() => {
-    setBreadcrumbs([{ label: "Inbox" }]);
-  }, [setBreadcrumbs]);
+    setBreadcrumbs([{ label: t("Inbox") }]);
+  }, [setBreadcrumbs, t]);
 
   const {
     data: approvals,
@@ -597,7 +600,7 @@ export function Inbox() {
                 value: "new",
                 label: (
                   <>
-                    New
+                    {t("New")}
                     {newItemCount > 0 && (
                       <span className="ml-1.5 rounded-full bg-blue-500/20 px-1.5 py-0.5 text-[10px] font-medium text-blue-500">
                         {newItemCount}
@@ -606,7 +609,7 @@ export function Inbox() {
                   </>
                 ),
               },
-              { value: "all", label: "All" },
+              { value: "all", label: t("All") },
             ]}
           />
         </Tabs>
@@ -618,16 +621,16 @@ export function Inbox() {
               onValueChange={(value) => setAllCategoryFilter(value as InboxCategoryFilter)}
             >
               <SelectTrigger className="h-8 w-[170px] text-xs">
-                <SelectValue placeholder="Category" />
+                <SelectValue placeholder={t("Category")} />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="everything">All categories</SelectItem>
-                <SelectItem value="issues_i_touched">My recent issues</SelectItem>
-                <SelectItem value="join_requests">Join requests</SelectItem>
-                <SelectItem value="approvals">Approvals</SelectItem>
-                <SelectItem value="failed_runs">Failed runs</SelectItem>
-                <SelectItem value="alerts">Alerts</SelectItem>
-                <SelectItem value="stale_work">Stale work</SelectItem>
+                 <SelectItem value="everything">{t("All categories")}</SelectItem>
+                 <SelectItem value="issues_i_touched">{t("My recent issues")}</SelectItem>
+                 <SelectItem value="join_requests">{t("Join requests")}</SelectItem>
+                 <SelectItem value="approvals">{t("Approvals")}</SelectItem>
+                 <SelectItem value="failed_runs">{t("Failed runs")}</SelectItem>
+                 <SelectItem value="alerts">{t("Alerts")}</SelectItem>
+                 <SelectItem value="stale_work">{t("Stale work")}</SelectItem>
               </SelectContent>
             </Select>
 
@@ -637,12 +640,12 @@ export function Inbox() {
                 onValueChange={(value) => setAllApprovalFilter(value as InboxApprovalFilter)}
               >
                 <SelectTrigger className="h-8 w-[170px] text-xs">
-                  <SelectValue placeholder="Approval status" />
+                  <SelectValue placeholder={t("Approval status")} />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">All approval statuses</SelectItem>
-                  <SelectItem value="actionable">Needs action</SelectItem>
-                  <SelectItem value="resolved">Resolved</SelectItem>
+                  <SelectItem value="all">{t("All approval statuses")}</SelectItem>
+                  <SelectItem value="actionable">{t("Needs action")}</SelectItem>
+                  <SelectItem value="resolved">{t("Resolved")}</SelectItem>
                 </SelectContent>
               </Select>
             )}
@@ -662,8 +665,8 @@ export function Inbox() {
           icon={InboxIcon}
           message={
             tab === "new"
-              ? "No issues you're involved in yet."
-              : "No inbox items match these filters."
+              ? t("No issues you're involved in yet.")
+              : t("No inbox items match these filters.")
           }
         />
       )}
@@ -673,7 +676,7 @@ export function Inbox() {
           {showSeparatorBefore("approvals") && <Separator />}
           <div>
             <h3 className="mb-3 text-sm font-semibold uppercase tracking-wide text-muted-foreground">
-              {tab === "new" ? "Approvals Needing Action" : "Approvals"}
+              {tab === "new" ? t("Approvals Needing Action") : t("Approvals")}
             </h3>
             <div className="grid gap-3">
               {approvalsToRender.map((approval) => (
@@ -701,7 +704,7 @@ export function Inbox() {
           {showSeparatorBefore("join_requests") && <Separator />}
           <div>
             <h3 className="mb-3 text-sm font-semibold uppercase tracking-wide text-muted-foreground">
-              Join Requests
+              {t("Join Requests")}
             </h3>
             <div className="grid gap-3">
               {joinRequests.map((joinRequest) => (
@@ -710,19 +713,19 @@ export function Inbox() {
                     <div className="space-y-1">
                       <p className="text-sm font-medium">
                         {joinRequest.requestType === "human"
-                          ? "Human join request"
-                          : `Agent join request${joinRequest.agentName ? `: ${joinRequest.agentName}` : ""}`}
+                          ? t("Human join request")
+                          : `${t("Agent join request")}${joinRequest.agentName ? `: ${joinRequest.agentName}` : ""}`}
                       </p>
                       <p className="text-xs text-muted-foreground">
-                        requested {timeAgo(joinRequest.createdAt)} from IP {joinRequest.requestIp}
+                        {t("requested")} {timeAgo(joinRequest.createdAt)} {t("from IP")} {joinRequest.requestIp}
                       </p>
                       {joinRequest.requestEmailSnapshot && (
                         <p className="text-xs text-muted-foreground">
-                          email: {joinRequest.requestEmailSnapshot}
+                          {t("email:")} {joinRequest.requestEmailSnapshot}
                         </p>
                       )}
                       {joinRequest.adapterType && (
-                        <p className="text-xs text-muted-foreground">adapter: {joinRequest.adapterType}</p>
+                        <p className="text-xs text-muted-foreground">{t("adapter:")} {joinRequest.adapterType}</p>
                       )}
                     </div>
                     <div className="flex items-center gap-2">
@@ -732,14 +735,14 @@ export function Inbox() {
                         disabled={approveJoinMutation.isPending || rejectJoinMutation.isPending}
                         onClick={() => rejectJoinMutation.mutate(joinRequest)}
                       >
-                        Reject
+                        {t("Reject")}
                       </Button>
                       <Button
                         size="sm"
                         disabled={approveJoinMutation.isPending || rejectJoinMutation.isPending}
                         onClick={() => approveJoinMutation.mutate(joinRequest)}
                       >
-                        Approve
+                        {t("Approve")}
                       </Button>
                     </div>
                   </div>
@@ -755,7 +758,7 @@ export function Inbox() {
           {showSeparatorBefore("failed_runs") && <Separator />}
           <div>
             <h3 className="mb-3 text-sm font-semibold uppercase tracking-wide text-muted-foreground">
-              Failed Runs
+              {t("Failed Runs")}
             </h3>
             <div className="grid gap-3">
               {failedRuns.map((run) => (
@@ -777,7 +780,7 @@ export function Inbox() {
           {showSeparatorBefore("alerts") && <Separator />}
           <div>
             <h3 className="mb-3 text-sm font-semibold uppercase tracking-wide text-muted-foreground">
-              Alerts
+              {t("Alerts")}
             </h3>
             <div className="divide-y divide-border border border-border">
               {showAggregateAgentError && (
@@ -788,15 +791,14 @@ export function Inbox() {
                   >
                     <AlertTriangle className="h-4 w-4 shrink-0 text-red-600 dark:text-red-400" />
                     <span className="text-sm">
-                      <span className="font-medium">{dashboard!.agents.error}</span>{" "}
-                      {dashboard!.agents.error === 1 ? "agent has" : "agents have"} errors
+                      <span className="font-medium">{dashboard!.agents.error}</span> 个智能体存在错误
                     </span>
                   </Link>
                   <button
                     type="button"
                     onClick={() => dismiss("alert:agent-errors")}
                     className="rounded-md p-1 text-muted-foreground opacity-0 transition-opacity hover:bg-accent hover:text-foreground group-hover/alert:opacity-100"
-                    aria-label="Dismiss"
+                    aria-label={t("Dismiss")}
                   >
                     <X className="h-3.5 w-3.5" />
                   </button>
@@ -810,16 +812,14 @@ export function Inbox() {
                   >
                     <AlertTriangle className="h-4 w-4 shrink-0 text-yellow-400" />
                     <span className="text-sm">
-                      Budget at{" "}
-                      <span className="font-medium">{dashboard!.costs.monthUtilizationPercent}%</span>{" "}
-                      utilization this month
+                      本月预算使用率已达 <span className="font-medium">{dashboard!.costs.monthUtilizationPercent}%</span>
                     </span>
                   </Link>
                   <button
                     type="button"
                     onClick={() => dismiss("alert:budget")}
                     className="rounded-md p-1 text-muted-foreground opacity-0 transition-opacity hover:bg-accent hover:text-foreground group-hover/alert:opacity-100"
-                    aria-label="Dismiss"
+                    aria-label={t("Dismiss")}
                   >
                     <X className="h-3.5 w-3.5" />
                   </button>
@@ -835,7 +835,7 @@ export function Inbox() {
           {showSeparatorBefore("stale_work") && <Separator />}
           <div>
             <h3 className="mb-3 text-sm font-semibold uppercase tracking-wide text-muted-foreground">
-              Stale Work
+              {t("Stale Work")}
             </h3>
             <div className="divide-y divide-border border border-border">
               {staleIssues.map((issue) => (
@@ -871,7 +871,7 @@ export function Inbox() {
                         })()}
                       <span className="text-xs text-muted-foreground sm:hidden">&middot;</span>
                       <span className="shrink-0 text-xs text-muted-foreground sm:order-last">
-                        updated {timeAgo(issue.updatedAt)}
+                        {t("updated")} {timeAgo(issue.updatedAt)}
                       </span>
                     </span>
                   </Link>
@@ -879,7 +879,7 @@ export function Inbox() {
                     type="button"
                     onClick={() => dismiss(`stale:${issue.id}`)}
                     className="mt-0.5 rounded-md p-1 text-muted-foreground opacity-0 transition-opacity hover:bg-accent hover:text-foreground group-hover/stale:opacity-100 sm:mt-0"
-                    aria-label="Dismiss"
+                    aria-label={t("Dismiss")}
                   >
                     <X className="h-3.5 w-3.5" />
                   </button>
@@ -895,7 +895,7 @@ export function Inbox() {
           {showSeparatorBefore("issues_i_touched") && <Separator />}
           <div>
             <h3 className="mb-3 text-sm font-semibold uppercase tracking-wide text-muted-foreground">
-              My Recent Issues
+              {t("MY RECENT ISSUES")}
             </h3>
             <div className="divide-y divide-border border border-border">
               {touchedIssues.map((issue) => {
@@ -935,7 +935,7 @@ export function Inbox() {
                               }
                             }}
                             className="hidden sm:inline-flex h-4 w-4 shrink-0 cursor-pointer items-center justify-center rounded-full transition-colors hover:bg-blue-500/20"
-                            aria-label="Mark as read"
+                            aria-label={t("Mark as read")}
                           >
                             <span
                               className={`h-2 w-2 rounded-full bg-blue-600 dark:bg-blue-400 transition-opacity duration-300 ${
@@ -956,8 +956,8 @@ export function Inbox() {
                         </span>
                         <span className="text-xs text-muted-foreground sm:order-last">
                           {issue.lastExternalCommentAt
-                            ? `commented ${timeAgo(issue.lastExternalCommentAt)}`
-                            : `updated ${timeAgo(issue.updatedAt)}`}
+                            ? `${t("commented")} ${timeAgo(issue.lastExternalCommentAt)}`
+                            : `${t("updated")} ${timeAgo(issue.updatedAt)}`}
                         </span>
                       </span>
                     </span>
@@ -980,7 +980,7 @@ export function Inbox() {
                           }
                         }}
                         className="shrink-0 self-center cursor-pointer sm:hidden"
-                        aria-label="Mark as read"
+                        aria-label={t("Mark as read")}
                       >
                         <span
                           className={`block h-2 w-2 rounded-full bg-blue-600 dark:bg-blue-400 transition-opacity duration-300 ${

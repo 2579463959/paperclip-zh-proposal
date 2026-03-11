@@ -2,6 +2,7 @@ import { useState, useEffect, useRef, useCallback, useMemo, type ChangeEvent } f
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useDialog } from "../context/DialogContext";
 import { useCompany } from "../context/CompanyContext";
+import { useI18n } from "../context/I18nContext";
 import { issuesApi } from "../api/issues";
 import { projectsApi } from "../api/projects";
 import { agentsApi } from "../api/agents";
@@ -169,6 +170,7 @@ const priorities = [
 export function NewIssueDialog() {
   const { newIssueOpen, newIssueDefaults, closeNewIssue } = useDialog();
   const { companies, selectedCompanyId, selectedCompany } = useCompany();
+  const { t } = useI18n();
   const queryClient = useQueryClient();
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
@@ -609,7 +611,7 @@ export function NewIssueDialog() {
               </PopoverContent>
             </Popover>
             <span className="text-muted-foreground/60">&rsaquo;</span>
-            <span>New issue</span>
+            <span>{t("New issue")}</span>
           </div>
           <div className="flex items-center gap-1">
             <Button
@@ -635,7 +637,7 @@ export function NewIssueDialog() {
         <div className="px-4 pt-4 pb-2 shrink-0">
           <textarea
             className="w-full text-lg font-semibold bg-transparent outline-none resize-none overflow-hidden placeholder:text-muted-foreground/50"
-            placeholder="Issue title"
+            placeholder={t("Issue title")}
             rows={1}
             value={title}
             onChange={(e) => {
@@ -660,7 +662,7 @@ export function NewIssueDialog() {
         <div className="px-4 pb-2 shrink-0">
           <div className="overflow-x-auto overscroll-x-contain">
             <div className="inline-flex items-center gap-2 text-sm text-muted-foreground flex-wrap sm:flex-nowrap sm:min-w-max">
-              <span>For</span>
+                    <span>{t("For")}</span>
               <InlineEntitySelector
                 ref={assigneeSelectorRef}
                 value={assigneeId}
@@ -668,7 +670,7 @@ export function NewIssueDialog() {
                 placeholder="Assignee"
                 disablePortal
                 noneLabel="No assignee"
-                searchPlaceholder="Search assignees..."
+                searchPlaceholder={t("Search assignees...")}
                 emptyMessage="No assignees found."
                 onChange={(id) => { if (id) trackRecentAssignee(id); setAssigneeId(id); }}
                 onConfirm={() => {
@@ -703,7 +705,7 @@ export function NewIssueDialog() {
                 placeholder="Project"
                 disablePortal
                 noneLabel="No project"
-                searchPlaceholder="Search projects..."
+                searchPlaceholder={t("Search projects...")}
                 emptyMessage="No projects found."
                 onChange={setProjectId}
                 onConfirm={() => {
@@ -756,10 +758,10 @@ export function NewIssueDialog() {
                   <InlineEntitySelector
                     value={assigneeModelOverride}
                     options={modelOverrideOptions}
-                    placeholder="Default model"
+                    placeholder={t("Default model")}
                     disablePortal
                     noneLabel="Default model"
-                    searchPlaceholder="Search models..."
+                    searchPlaceholder={t("Search models...")}
                     emptyMessage="No models found."
                     onChange={setAssigneeModelOverride}
                   />
@@ -783,7 +785,7 @@ export function NewIssueDialog() {
                 </div>
                 {assigneeAdapterType === "claude_local" && (
                   <div className="flex items-center justify-between rounded-md border border-border px-2 py-1.5">
-                    <div className="text-xs text-muted-foreground">Enable Chrome (--chrome)</div>
+                    <div className="text-xs text-muted-foreground">{t("Enable Chrome (--chrome)")}</div>
                     <button
                       className={cn(
                         "relative inline-flex h-5 w-9 items-center rounded-full transition-colors",
@@ -801,7 +803,7 @@ export function NewIssueDialog() {
                   </div>
                 )}
                 <div className="flex items-center justify-between rounded-md border border-border px-2 py-1.5">
-                  <div className="text-xs text-muted-foreground">Use project workspace</div>
+                  <div className="text-xs text-muted-foreground">{t("Use project workspace")}</div>
                   <button
                     className={cn(
                       "relative inline-flex h-5 w-9 items-center rounded-full transition-colors",
@@ -828,7 +830,7 @@ export function NewIssueDialog() {
             ref={descriptionEditorRef}
             value={description}
             onChange={setDescription}
-            placeholder="Add description..."
+            placeholder={t("Add description...")}
             bordered={false}
             mentions={mentionOptions}
             contentClassName={cn("text-sm text-muted-foreground pb-12", expanded ? "min-h-[220px]" : "min-h-[120px]")}
@@ -878,7 +880,7 @@ export function NewIssueDialog() {
                 ) : (
                   <>
                     <Minus className="h-3 w-3 text-muted-foreground" />
-                    Priority
+                    {t("Priority")}
                   </>
                 )}
               </button>
@@ -903,7 +905,7 @@ export function NewIssueDialog() {
           {/* Labels chip (placeholder) */}
           <button className="inline-flex items-center gap-1.5 rounded-md border border-border px-2 py-1 text-xs hover:bg-accent/50 transition-colors text-muted-foreground">
             <Tag className="h-3 w-3" />
-            Labels
+            {t("Labels")}
           </button>
 
           {/* Attach image chip */}
@@ -933,11 +935,11 @@ export function NewIssueDialog() {
             <PopoverContent className="w-44 p-1" align="start">
               <button className="flex items-center gap-2 w-full px-2 py-1.5 text-xs rounded hover:bg-accent/50 text-muted-foreground">
                 <Calendar className="h-3 w-3" />
-                Start date
+                {t("Start date")}
               </button>
               <button className="flex items-center gap-2 w-full px-2 py-1.5 text-xs rounded hover:bg-accent/50 text-muted-foreground">
                 <Calendar className="h-3 w-3" />
-                Due date
+                {t("Due date")}
               </button>
             </PopoverContent>
           </Popover>
@@ -952,14 +954,14 @@ export function NewIssueDialog() {
             onClick={discardDraft}
             disabled={!hasDraft && !loadDraft()}
           >
-            Discard Draft
+            {t("Discard Draft")}
           </Button>
           <Button
             size="sm"
             disabled={!title.trim() || createIssue.isPending}
             onClick={handleSubmit}
           >
-            {createIssue.isPending ? "Creating..." : "Create Issue"}
+            {createIssue.isPending ? t("Creating...") : t("Create Issue")}
           </Button>
         </div>
       </DialogContent>

@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
-import { isCodexUnknownSessionError, parseCodexJsonl } from "@paperclipai/adapter-codex-local/server";
+import { calculateCodexUsageCostUsd, isCodexUnknownSessionError, parseCodexJsonl } from "@paperclipai/adapter-codex-local/server";
 import { parseCodexStdoutLine } from "@paperclipai/adapter-codex-local/ui";
 import { printCodexStreamEvent } from "@paperclipai/adapter-codex-local/cli";
 
@@ -21,6 +21,15 @@ describe("codex_local parser", () => {
       outputTokens: 4,
     });
     expect(parsed.errorMessage).toBe("model access denied");
+  });
+
+  it("calculates cost from token usage", () => {
+    expect(
+      calculateCodexUsageCostUsd(
+        { inputTokens: 1_000_000, cachedInputTokens: 200_000, outputTokens: 500_000 },
+        { inputUsdPer1M: 1.75, cachedInputUsdPer1M: 0, outputUsdPer1M: 14 },
+      ),
+    ).toBeCloseTo(8.4, 6);
   });
 });
 

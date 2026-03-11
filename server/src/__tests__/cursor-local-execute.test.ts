@@ -4,7 +4,8 @@ import os from "node:os";
 import path from "node:path";
 import { execute } from "@paperclipai/adapter-cursor-local/server";
 
-async function writeFakeCursorCommand(commandPath: string): Promise<void> {
+async function writeFakeCursorCommand(root: string): Promise<string> {
+  const nodeScriptPath = path.join(root, "agent.js");
   const script = `#!/usr/bin/env node
 const fs = require("node:fs");
 
@@ -36,8 +37,21 @@ console.log(JSON.stringify({
   result: "ok",
 }));
 `;
+  await fs.writeFile(nodeScriptPath, script, "utf8");
+
+  if (process.platform === "win32") {
+    const commandPath = path.join(root, "agent.cmd");
+    const wrapper = `@echo off
+"${process.execPath}" "${nodeScriptPath}" %*
+`;
+    await fs.writeFile(commandPath, wrapper, "utf8");
+    return commandPath;
+  }
+
+  const commandPath = path.join(root, "agent");
   await fs.writeFile(commandPath, script, "utf8");
   await fs.chmod(commandPath, 0o755);
+  return commandPath;
 }
 
 type CapturePayload = {
@@ -50,10 +64,9 @@ describe("cursor execute", () => {
   it("injects paperclip env vars and prompt note by default", async () => {
     const root = await fs.mkdtemp(path.join(os.tmpdir(), "paperclip-cursor-execute-"));
     const workspace = path.join(root, "workspace");
-    const commandPath = path.join(root, "agent");
     const capturePath = path.join(root, "capture.json");
     await fs.mkdir(workspace, { recursive: true });
-    await writeFakeCursorCommand(commandPath);
+    const commandPath = await writeFakeCursorCommand(root);
 
     const previousHome = process.env.HOME;
     process.env.HOME = root;
@@ -125,10 +138,9 @@ describe("cursor execute", () => {
   it("passes --mode when explicitly configured", async () => {
     const root = await fs.mkdtemp(path.join(os.tmpdir(), "paperclip-cursor-execute-mode-"));
     const workspace = path.join(root, "workspace");
-    const commandPath = path.join(root, "agent");
     const capturePath = path.join(root, "capture.json");
     await fs.mkdir(workspace, { recursive: true });
-    await writeFakeCursorCommand(commandPath);
+    const commandPath = await writeFakeCursorCommand(root);
 
     const previousHome = process.env.HOME;
     process.env.HOME = root;

@@ -25,6 +25,7 @@ import { secretService } from "./secrets.js";
 import { resolveDefaultAgentWorkspaceDir } from "../home-paths.js";
 
 const MAX_LIVE_LOG_CHUNK_BYTES = 8 * 1024;
+const RUN_LIVENESS_TOUCH_INTERVAL_MS = 30 * 1000;
 const HEARTBEAT_MAX_CONCURRENT_RUNS_DEFAULT = 1;
 const HEARTBEAT_MAX_CONCURRENT_RUNS_MAX = 10;
 const DEFERRED_WAKE_CONTEXT_KEY = "_paperclipWakeContext";
@@ -1203,6 +1204,7 @@ export function heartbeatService(db: Db) {
         })
         .where(eq(heartbeatRuns.id, runId));
 
+      let lastLivenessTouchAt = Date.now();
       const onLog = async (stream: "stdout" | "stderr", chunk: string) => {
         if (stream === "stdout") stdoutExcerpt = appendExcerpt(stdoutExcerpt, chunk);
         if (stream === "stderr") stderrExcerpt = appendExcerpt(stderrExcerpt, chunk);
@@ -1231,6 +1233,15 @@ export function heartbeatService(db: Db) {
             truncated: payloadChunk.length !== chunk.length,
           },
         });
+
+        const nowMs = Date.now();
+        if (nowMs - lastLivenessTouchAt >= RUN_LIVENESS_TOUCH_INTERVAL_MS) {
+          lastLivenessTouchAt = nowMs;
+          await db
+            .update(heartbeatRuns)
+            .set({ updatedAt: new Date(nowMs) })
+            .where(eq(heartbeatRuns.id, runId));
+        }
       };
       for (const warning of runtimeWorkspaceWarnings) {
         await onLog("stderr", `[paperclip] ${warning}\n`);

@@ -5,6 +5,7 @@ import { ChevronRight, Plus } from "lucide-react";
 import { useCompany } from "../context/CompanyContext";
 import { useDialog } from "../context/DialogContext";
 import { useSidebar } from "../context/SidebarContext";
+import { useI18n } from "../context/I18nContext";
 import { agentsApi } from "../api/agents";
 import { heartbeatsApi } from "../api/heartbeats";
 import { queryKeys } from "../lib/queryKeys";
@@ -43,6 +44,7 @@ export function SidebarAgents() {
   const { selectedCompanyId } = useCompany();
   const { openNewAgent } = useDialog();
   const { isMobile, setSidebarOpen } = useSidebar();
+  const { t } = useI18n();
   const location = useLocation();
 
   const { data: agents } = useQuery({
@@ -88,7 +90,7 @@ export function SidebarAgents() {
               )}
             />
             <span className="text-[10px] font-medium uppercase tracking-widest font-mono text-muted-foreground/60">
-              Agents
+              {t("Agents")}
             </span>
           </CollapsibleTrigger>
           <button
@@ -97,7 +99,7 @@ export function SidebarAgents() {
               openNewAgent();
             }}
             className="flex items-center justify-center h-4 w-4 rounded text-muted-foreground/60 hover:text-foreground hover:bg-accent/50 transition-colors"
-            aria-label="New agent"
+            aria-label={t("New agent")}
           >
             <Plus className="h-3 w-3" />
           </button>
@@ -131,7 +133,7 @@ export function SidebarAgents() {
                       <span className="relative inline-flex rounded-full h-2 w-2 bg-blue-500" />
                     </span>
                     <span className="text-[11px] font-medium text-blue-600 dark:text-blue-400">
-                      {runCount} live
+                      {runCount} {t("Live")}
                     </span>
                   </span>
                 )}

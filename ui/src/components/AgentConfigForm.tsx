@@ -13,7 +13,6 @@ import { secretsApi } from "../api/secrets";
 import { assetsApi } from "../api/assets";
 import {
   DEFAULT_CODEX_LOCAL_BYPASS_APPROVALS_AND_SANDBOX,
-  DEFAULT_CODEX_LOCAL_MODEL,
 } from "@paperclipai/adapter-codex-local";
 import { DEFAULT_CURSOR_LOCAL_MODEL } from "@paperclipai/adapter-cursor-local";
 import {
@@ -27,6 +26,7 @@ import { cn } from "../lib/utils";
 import { extractModelName, extractProviderId } from "../lib/model-utils";
 import { queryKeys } from "../lib/queryKeys";
 import { useCompany } from "../context/CompanyContext";
+import { useI18n } from "../context/I18nContext";
 import {
   Field,
   ToggleField,
@@ -38,6 +38,7 @@ import {
   adapterLabels,
 } from "./agent-config-primitives";
 import { defaultCreateValues } from "./agent-config-defaults";
+import { mergeRecordPatch } from "../lib/merge-record-patch";
 import { getUIAdapter } from "../adapters";
 import { ClaudeLocalAdvancedFields } from "../adapters/claude-local/config-fields";
 import { MarkdownEditor } from "./MarkdownEditor";
@@ -163,6 +164,7 @@ export function AgentConfigForm(props: AgentConfigFormProps) {
   const isCreate = mode === "create";
   const cards = props.sectionLayout === "cards";
   const { selectedCompanyId } = useCompany();
+  const { t } = useI18n();
   const queryClient = useQueryClient();
 
   const { data: availableSecrets = [] } = useQuery({
@@ -236,7 +238,7 @@ export function AgentConfigForm(props: AgentConfigFormProps) {
       patch.adapterConfig = overlay.adapterConfig;
     } else if (Object.keys(overlay.adapterConfig).length > 0) {
       const existing = (agent.adapterConfig ?? {}) as Record<string, unknown>;
-      patch.adapterConfig = { ...existing, ...overlay.adapterConfig };
+      patch.adapterConfig = mergeRecordPatch(existing, overlay.adapterConfig);
     }
     if (Object.keys(overlay.heartbeat).length > 0) {
       const existingRc = (agent.runtimeConfig ?? {}) as Record<string, unknown>;
@@ -322,7 +324,7 @@ export function AgentConfigForm(props: AgentConfigFormProps) {
       return uiAdapter.buildAdapterConfig(val!);
     }
     const base = config as Record<string, unknown>;
-    return { ...base, ...overlay.adapterConfig };
+    return mergeRecordPatch(base, overlay.adapterConfig);
   }
 
   const testEnvironment = useMutation({
@@ -396,33 +398,33 @@ export function AgentConfigForm(props: AgentConfigFormProps) {
       {!isCreate && (
         <div className={cn(!cards && "border-b border-border")}>
           {cards
-            ? <h3 className="text-sm font-medium mb-3">Identity</h3>
-            : <div className="px-4 py-2 text-xs font-medium text-muted-foreground">Identity</div>
+            ? <h3 className="text-sm font-medium mb-3">{t("Identity")}</h3>
+            : <div className="px-4 py-2 text-xs font-medium text-muted-foreground">{t("Identity")}</div>
           }
           <div className={cn(cards ? "border border-border rounded-lg p-4 space-y-3" : "px-4 pb-3 space-y-3")}>
             <Field label="Name" hint={help.name}>
               <DraftInput
-                value={eff("identity", "name", props.agent.name)}
+                value={eff("identity", "name", t(props.agent.name))}
                 onCommit={(v) => mark("identity", "name", v)}
                 immediate
                 className={inputClass}
-                placeholder="Agent name"
+                placeholder={t("Agent name")}
               />
             </Field>
             <Field label="Title" hint={help.title}>
               <DraftInput
-                value={eff("identity", "title", props.agent.title ?? "")}
+                value={eff("identity", "title", props.agent.title ? t(props.agent.title) : "")}
                 onCommit={(v) => mark("identity", "title", v || null)}
                 immediate
                 className={inputClass}
-                placeholder="e.g. VP of Engineering"
+                placeholder={t("e.g. VP of Engineering")}
               />
             </Field>
             <Field label="Capabilities" hint={help.capabilities}>
               <MarkdownEditor
-                value={eff("identity", "capabilities", props.agent.capabilities ?? "")}
+                value={eff("identity", "capabilities", props.agent.capabilities ? t(props.agent.capabilities) : "")}
                 onChange={(v) => mark("identity", "capabilities", v || null)}
-                placeholder="Describe what this agent can do..."
+                placeholder={t("Describe what this agent can do...")}
                 contentClassName="min-h-[44px] text-sm font-mono"
                 imageUploadHandler={async (file) => {
                   const asset = await uploadMarkdownImage.mutateAsync({
@@ -442,7 +444,7 @@ export function AgentConfigForm(props: AgentConfigFormProps) {
                     String(config.promptTemplate ?? ""),
                   )}
                   onChange={(v) => mark("adapterConfig", "promptTemplate", v ?? "")}
-                  placeholder="You are agent {{ agent.name }}. Your role is {{ agent.role }}..."
+                  placeholder={t("You are agent {{ agent.name }}. Your role is {{ agent.role }}...")}
                   contentClassName="min-h-[88px] text-sm font-mono"
                   imageUploadHandler={async (file) => {
                     const namespace = `agents/${props.agent.id}/prompt-template`;
@@ -471,7 +473,7 @@ export function AgentConfigForm(props: AgentConfigFormProps) {
             onClick={() => testEnvironment.mutate()}
             disabled={testEnvironment.isPending || !selectedCompanyId}
           >
-            {testEnvironment.isPending ? "Testing..." : "Test environment"}
+            {testEnvironment.isPending ? t("Testing...") : t("Test environment")}
           </Button>
         </div>
         <div className={cn(cards ? "border border-border rounded-lg p-4 space-y-3" : "px-4 pb-3 space-y-3")}>
@@ -484,7 +486,7 @@ export function AgentConfigForm(props: AgentConfigFormProps) {
                   const { adapterType: _at, ...defaults } = defaultCreateValues;
                   const nextValues: CreateConfigValues = { ...defaults, adapterType: t };
                   if (t === "codex_local") {
-                    nextValues.model = DEFAULT_CODEX_LOCAL_MODEL;
+                    nextValues.model = "";
                     nextValues.dangerouslyBypassSandbox =
                       DEFAULT_CODEX_LOCAL_BYPASS_APPROVALS_AND_SANDBOX;
                   } else if (t === "cursor") {
@@ -502,7 +504,7 @@ export function AgentConfigForm(props: AgentConfigFormProps) {
                     adapterConfig: {
                       model:
                         t === "codex_local"
-                          ? DEFAULT_CODEX_LOCAL_MODEL
+                          ? ""
                           : t === "cursor"
                             ? DEFAULT_CURSOR_LOCAL_MODEL
                           : "",
@@ -587,8 +589,8 @@ export function AgentConfigForm(props: AgentConfigFormProps) {
       {isLocal && (
         <div className={cn(!cards && "border-b border-border")}>
           {cards
-            ? <h3 className="text-sm font-medium mb-3">Permissions &amp; Configuration</h3>
-            : <div className="px-4 py-2 text-xs font-medium text-muted-foreground">Permissions &amp; Configuration</div>
+            ? <h3 className="text-sm font-medium mb-3">{t("Permissions & Configuration")}</h3>
+            : <div className="px-4 py-2 text-xs font-medium text-muted-foreground">{t("Permissions & Configuration")}</div>
           }
           <div className={cn(cards ? "border border-border rounded-lg p-4 space-y-3" : "px-4 pb-3 space-y-3")}>
               <Field label="Command" hint={help.localCommand}>
@@ -635,7 +637,7 @@ export function AgentConfigForm(props: AgentConfigFormProps) {
                 <p className="text-xs text-destructive">
                   {fetchedModelsError instanceof Error
                     ? fetchedModelsError.message
-                    : "Failed to load adapter models."}
+                     : t("Failed to load adapter models.")}
                 </p>
               )}
 
@@ -654,7 +656,7 @@ export function AgentConfigForm(props: AgentConfigFormProps) {
                 codexSearchEnabled &&
                 currentThinkingEffort === "minimal" && (
                   <p className="text-xs text-amber-400">
-                    Codex may reject `minimal` thinking when search is enabled.
+                    {t("Codex may reject `minimal` thinking when search is enabled.")}
                   </p>
                 )}
               <Field label="Bootstrap prompt (first run)" hint={help.bootstrapPrompt}>
@@ -673,7 +675,7 @@ export function AgentConfigForm(props: AgentConfigFormProps) {
                       ? set!({ bootstrapPrompt: v })
                       : mark("adapterConfig", "bootstrapPromptTemplate", v || undefined)
                   }
-                  placeholder="Optional initial setup prompt for the first run"
+                  placeholder={t("Optional initial setup prompt for the first run")}
                   contentClassName="min-h-[44px] text-sm font-mono"
                   imageUploadHandler={async (file) => {
                     const namespace = isCreate
@@ -764,8 +766,8 @@ export function AgentConfigForm(props: AgentConfigFormProps) {
       {isCreate ? (
         <div className={cn(!cards && "border-b border-border")}>
           {cards
-            ? <h3 className="text-sm font-medium flex items-center gap-2 mb-3"><Heart className="h-3 w-3" /> Run Policy</h3>
-            : <div className="px-4 py-2 text-xs font-medium text-muted-foreground flex items-center gap-2"><Heart className="h-3 w-3" /> Run Policy</div>
+            ? <h3 className="text-sm font-medium flex items-center gap-2 mb-3"><Heart className="h-3 w-3" /> {t("Run Policy")}</h3>
+            : <div className="px-4 py-2 text-xs font-medium text-muted-foreground flex items-center gap-2"><Heart className="h-3 w-3" /> {t("Run Policy")}</div>
           }
           <div className={cn(cards ? "border border-border rounded-lg p-4 space-y-3" : "px-4 pb-3 space-y-3")}>
             <ToggleWithNumber
@@ -785,8 +787,8 @@ export function AgentConfigForm(props: AgentConfigFormProps) {
       ) : (
         <div className={cn(!cards && "border-b border-border")}>
           {cards
-            ? <h3 className="text-sm font-medium flex items-center gap-2 mb-3"><Heart className="h-3 w-3" /> Run Policy</h3>
-            : <div className="px-4 py-2 text-xs font-medium text-muted-foreground flex items-center gap-2"><Heart className="h-3 w-3" /> Run Policy</div>
+            ? <h3 className="text-sm font-medium flex items-center gap-2 mb-3"><Heart className="h-3 w-3" /> {t("Run Policy")}</h3>
+            : <div className="px-4 py-2 text-xs font-medium text-muted-foreground flex items-center gap-2"><Heart className="h-3 w-3" /> {t("Run Policy")}</div>
           }
           <div className={cn(cards ? "border border-border rounded-lg overflow-hidden" : "")}>
             <div className={cn(cards ? "p-4 space-y-3" : "px-4 pb-3 space-y-3")}>
@@ -804,7 +806,7 @@ export function AgentConfigForm(props: AgentConfigFormProps) {
               />
             </div>
             <CollapsibleSection
-              title="Advanced Run Policy"
+              title={t("Advanced Run Policy")}
               bordered={cards}
               open={runPolicyAdvancedOpen}
               onToggle={() => setRunPolicyAdvancedOpen(!runPolicyAdvancedOpen)}
@@ -1218,6 +1220,7 @@ function ModelDropdown({
   required: boolean;
   groupByProvider: boolean;
 }) {
+  const { t } = useI18n();
   const [modelSearch, setModelSearch] = useState("");
   const selected = models.find((m) => m.id === value);
   const filteredModels = useMemo(() => {
@@ -1270,7 +1273,7 @@ function ModelDropdown({
             <span className={cn(!value && "text-muted-foreground")}>
               {selected
                 ? selected.label
-                : value || (allowDefault ? "Default" : required ? "Select model (required)" : "Select model")}
+                : value || (allowDefault ? t("Default") : required ? t("Select model (required)") : t("Select model"))}
             </span>
             <ChevronDown className="h-3 w-3 text-muted-foreground" />
           </button>
@@ -1278,7 +1281,7 @@ function ModelDropdown({
         <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-1" align="start">
           <input
             className="w-full px-2 py-1.5 text-xs bg-transparent outline-none border-b border-border mb-1 placeholder:text-muted-foreground/50"
-            placeholder="Search models..."
+            placeholder={t("Search models...")}
             value={modelSearch}
             onChange={(e) => setModelSearch(e.target.value)}
             autoFocus
@@ -1295,7 +1298,7 @@ function ModelDropdown({
                   onOpenChange(false);
                 }}
               >
-                Default
+                {t("Default")}
               </button>
             )}
             {groupedModels.map((group) => (
@@ -1325,7 +1328,7 @@ function ModelDropdown({
               </div>
             ))}
             {filteredModels.length === 0 && (
-              <p className="px-2 py-1.5 text-xs text-muted-foreground">No models found.</p>
+              <p className="px-2 py-1.5 text-xs text-muted-foreground">{t("No models found.")}</p>
             )}
           </div>
         </PopoverContent>

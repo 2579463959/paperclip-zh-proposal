@@ -4,6 +4,7 @@ import { StatusBadge } from "./StatusBadge";
 import { ChevronRight } from "lucide-react";
 import { cn } from "../lib/utils";
 import { useState } from "react";
+import { useI18n } from "../context/I18nContext";
 
 interface GoalTreeProps {
   goals: Goal[];
@@ -22,6 +23,7 @@ interface GoalNodeProps {
 
 function GoalNode({ goal, children, allGoals, depth, goalLink, onSelect }: GoalNodeProps) {
   const [expanded, setExpanded] = useState(true);
+  const { t } = useI18n();
   const hasChildren = children.length > 0;
   const link = goalLink?.(goal);
 
@@ -43,7 +45,7 @@ function GoalNode({ goal, children, allGoals, depth, goalLink, onSelect }: GoalN
       ) : (
         <span className="w-4" />
       )}
-      <span className="text-xs text-muted-foreground capitalize">{goal.level}</span>
+      <span className="text-xs text-muted-foreground capitalize">{t(goal.level)}</span>
       <span className="flex-1 truncate">{goal.title}</span>
       <StatusBadge status={goal.status} />
     </>
@@ -92,11 +94,12 @@ function GoalNode({ goal, children, allGoals, depth, goalLink, onSelect }: GoalN
 }
 
 export function GoalTree({ goals, goalLink, onSelect }: GoalTreeProps) {
+  const { t } = useI18n();
   const goalIds = new Set(goals.map((g) => g.id));
   const roots = goals.filter((g) => !g.parentId || !goalIds.has(g.parentId));
 
   if (goals.length === 0) {
-    return <p className="text-sm text-muted-foreground">No goals.</p>;
+    return <p className="text-sm text-muted-foreground">{t("No goals.")}</p>;
   }
 
   return (

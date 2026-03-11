@@ -4,6 +4,33 @@ import os from "node:os";
 import path from "node:path";
 import { testEnvironment } from "@paperclipai/adapter-opencode-local/server";
 
+async function writeFakeOpencodeCommand(binDir: string): Promise<string> {
+  if (process.platform === "win32") {
+    const commandPath = path.join(binDir, "opencode.cmd");
+    const script = [
+      "@echo off",
+      ">&2 echo ProviderModelNotFoundError: ProviderModelNotFoundError",
+      ">&2 echo data: { providerID: \"openai\", modelID: \"gpt-5.3-codex\", suggestions: [] }",
+      "exit /b 1",
+      "",
+    ].join("\r\n");
+    await fs.writeFile(commandPath, script, "utf8");
+    return commandPath;
+  }
+
+  const commandPath = path.join(binDir, "opencode");
+  const script = [
+    "#!/bin/sh",
+    "echo 'ProviderModelNotFoundError: ProviderModelNotFoundError' 1>&2",
+    "echo 'data: { providerID: \"openai\", modelID: \"gpt-5.3-codex\", suggestions: [] }' 1>&2",
+    "exit 1",
+    "",
+  ].join("\n");
+  await fs.writeFile(commandPath, script, "utf8");
+  await fs.chmod(commandPath, 0o755);
+  return commandPath;
+}
+
 describe("opencode_local environment diagnostics", () => {
   it("reports a missing working directory as an error when cwd is absolute", async () => {
     const cwd = path.join(
@@ -62,18 +89,9 @@ describe("opencode_local environment diagnostics", () => {
   it("classifies ProviderModelNotFoundError probe output as model-unavailable warning", async () => {
     const cwd = await fs.mkdtemp(path.join(os.tmpdir(), "paperclip-opencode-env-probe-cwd-"));
     const binDir = await fs.mkdtemp(path.join(os.tmpdir(), "paperclip-opencode-env-probe-bin-"));
-    const fakeOpencode = path.join(binDir, "opencode");
-    const script = [
-      "#!/bin/sh",
-      "echo 'ProviderModelNotFoundError: ProviderModelNotFoundError' 1>&2",
-      "echo 'data: { providerID: \"openai\", modelID: \"gpt-5.3-codex\", suggestions: [] }' 1>&2",
-      "exit 1",
-      "",
-    ].join("\n");
 
     try {
-      await fs.writeFile(fakeOpencode, script, "utf8");
-      await fs.chmod(fakeOpencode, 0o755);
+      const fakeOpencode = await writeFakeOpencodeCommand(binDir);
 
       const result = await testEnvironment({
         companyId: "company-1",

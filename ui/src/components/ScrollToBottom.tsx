@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { ArrowDown } from "lucide-react";
+import { useI18n } from "../context/I18nContext";
 
 /**
  * Floating scroll-to-bottom button that appears when the user is far from the
@@ -7,6 +8,7 @@ import { ArrowDown } from "lucide-react";
  * the bottom. Positioned to avoid the mobile bottom nav.
  */
 export function ScrollToBottom() {
+  const { t } = useI18n();
   const [visible, setVisible] = useState(false);
 
   useEffect(() => {
@@ -32,7 +34,7 @@ export function ScrollToBottom() {
     <button
       onClick={scroll}
       className="fixed bottom-[calc(1.5rem+5rem+env(safe-area-inset-bottom))] right-6 z-40 flex h-9 w-9 items-center justify-center rounded-full border border-border bg-background shadow-md hover:bg-accent transition-colors md:bottom-6"
-      aria-label="Scroll to bottom"
+      aria-label={t("Scroll to bottom")}
     >
       <ArrowDown className="h-4 w-4" />
     </button>

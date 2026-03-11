@@ -9,23 +9,23 @@ export function timeAgo(date: Date | string): string {
   const then = new Date(date).getTime();
   const seconds = Math.round((now - then) / 1000);
 
-  if (seconds < MINUTE) return "just now";
+  if (seconds < MINUTE) return "刚刚";
   if (seconds < HOUR) {
     const m = Math.floor(seconds / MINUTE);
-    return `${m}m ago`;
+    return `${m}分钟前`;
   }
   if (seconds < DAY) {
     const h = Math.floor(seconds / HOUR);
-    return `${h}h ago`;
+    return `${h}小时前`;
   }
   if (seconds < WEEK) {
     const d = Math.floor(seconds / DAY);
-    return `${d}d ago`;
+    return `${d}天前`;
   }
   if (seconds < MONTH) {
     const w = Math.floor(seconds / WEEK);
-    return `${w}w ago`;
+    return `${w}周前`;
   }
   const mo = Math.floor(seconds / MONTH);
-  return `${mo}mo ago`;
+  return `${mo}个月前`;
 }
