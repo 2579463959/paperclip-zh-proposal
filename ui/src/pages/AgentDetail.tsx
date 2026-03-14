@@ -21,6 +21,7 @@ import type { TranscriptEntry } from "../adapters";
 import { StatusBadge } from "../components/StatusBadge";
 import { agentStatusDot, agentStatusDotDefault } from "../lib/status-colors";
 import { MarkdownBody } from "../components/MarkdownBody";
+import { RunTranscriptView, type TranscriptMode } from "../components/transcript/RunTranscriptView";
 import { CopyText } from "../components/CopyText";
 import { EntityRow } from "../components/EntityRow";
 import { Identity } from "../components/Identity";
@@ -1887,6 +1888,7 @@ function LogViewer({ run, adapterType }: { run: HeartbeatRun; adapterType: strin
   const [logOffset, setLogOffset] = useState(0);
   const [isFollowing, setIsFollowing] = useState(false);
   const [isStreamingConnected, setIsStreamingConnected] = useState(false);
+  const [transcriptMode, setTranscriptMode] = useState<TranscriptMode>("nice");
   const logEndRef = useRef<HTMLDivElement>(null);
   const pendingLogLineRef = useRef("");
   const scrollContainerRef = useRef<ScrollContainer | null>(null);
@@ -2332,6 +2334,23 @@ function LogViewer({ run, adapterType }: { run: HeartbeatRun; adapterType: strin
           {t("Transcript")} ({transcript.length})
         </span>
         <div className="flex items-center gap-2">
+          <div className="inline-flex rounded-md border border-border overflow-hidden">
+            {(["nice", "raw"] as const).map((mode) => (
+              <button
+                key={mode}
+                type="button"
+                className={cn(
+                  "px-2 py-1 text-[11px] transition-colors",
+                  transcriptMode === mode
+                    ? "bg-accent text-foreground"
+                    : "bg-background text-muted-foreground hover:text-foreground",
+                )}
+                onClick={() => setTranscriptMode(mode)}
+              >
+                {mode === "nice" ? "润色" : "原始"}
+              </button>
+            ))}
+          </div>
           {isLive && !isFollowing && (
             <Button
               variant="ghost"
@@ -2358,125 +2377,17 @@ function LogViewer({ run, adapterType }: { run: HeartbeatRun; adapterType: strin
           )}
         </div>
       </div>
-      <div className="bg-neutral-100 dark:bg-neutral-950 rounded-lg p-3 font-mono text-xs space-y-0.5 overflow-x-hidden">
-        {transcript.length === 0 && !run.logRef && (
-          <div className="text-neutral-500">{t("No persisted transcript for this run.")}</div>
-        )}
-        {transcript.map((entry, idx) => {
-          const time = new Date(entry.ts).toLocaleTimeString("en-US", { hour12: false });
-          const grid = "grid grid-cols-[auto_auto_1fr] gap-x-2 sm:gap-x-3 items-baseline";
-          const tsCell = "text-neutral-400 dark:text-neutral-600 select-none w-12 sm:w-16 text-[10px] sm:text-xs";
-          const lblCell = "w-14 sm:w-20 text-[10px] sm:text-xs";
-          const contentCell = "min-w-0 whitespace-pre-wrap break-words overflow-hidden";
-          const expandCell = "col-span-full md:col-start-3 md:col-span-1";
-
-          if (entry.kind === "assistant") {
-            return (
-              <div key={`${entry.ts}-assistant-${idx}`} className={cn(grid, "py-0.5")}>
-                <span className={tsCell}>{time}</span>
-                <span className={cn(lblCell, "text-green-700 dark:text-green-300")}>assistant</span>
-                <span className={cn(contentCell, "text-green-900 dark:text-green-100")}>{entry.text}</span>
-              </div>
-            );
-          }
-
-          if (entry.kind === "thinking") {
-            return (
-              <div key={`${entry.ts}-thinking-${idx}`} className={cn(grid, "py-0.5")}>
-                <span className={tsCell}>{time}</span>
-                <span className={cn(lblCell, "text-green-600/60 dark:text-green-300/60")}>thinking</span>
-                <span className={cn(contentCell, "text-green-800/60 dark:text-green-100/60 italic")}>{entry.text}</span>
-              </div>
-            );
-          }
-
-          if (entry.kind === "user") {
-            return (
-              <div key={`${entry.ts}-user-${idx}`} className={cn(grid, "py-0.5")}>
-                <span className={tsCell}>{time}</span>
-                <span className={cn(lblCell, "text-neutral-500 dark:text-neutral-400")}>user</span>
-                <span className={cn(contentCell, "text-neutral-700 dark:text-neutral-300")}>{entry.text}</span>
-              </div>
-            );
-          }
-
-          if (entry.kind === "tool_call") {
-            return (
-              <div key={`${entry.ts}-tool-${idx}`} className={cn(grid, "gap-y-1 py-0.5")}>
-                <span className={tsCell}>{time}</span>
-                <span className={cn(lblCell, "text-yellow-700 dark:text-yellow-300")}>tool_call</span>
-                <span className="text-yellow-900 dark:text-yellow-100 min-w-0">{entry.name}</span>
-                <pre className={cn(expandCell, "bg-neutral-200 dark:bg-neutral-900 rounded p-2 text-[11px] overflow-x-auto whitespace-pre-wrap text-neutral-800 dark:text-neutral-200")}>
-                  {JSON.stringify(entry.input, null, 2)}
-                </pre>
-              </div>
-            );
-          }
-
-          if (entry.kind === "tool_result") {
-            return (
-              <div key={`${entry.ts}-toolres-${idx}`} className={cn(grid, "gap-y-1 py-0.5")}>
-                <span className={tsCell}>{time}</span>
-                <span className={cn(lblCell, entry.isError ? "text-red-600 dark:text-red-300" : "text-purple-600 dark:text-purple-300")}>tool_result</span>
-                {entry.isError ? <span className="text-red-600 dark:text-red-400 min-w-0">error</span> : <span />}
-                <pre className={cn(expandCell, "bg-neutral-100 dark:bg-neutral-900 rounded p-2 text-[11px] overflow-x-auto whitespace-pre-wrap text-neutral-700 dark:text-neutral-300 max-h-60 overflow-y-auto")}>
-                  {(() => { try { return JSON.stringify(JSON.parse(entry.content), null, 2); } catch { return entry.content; } })()}
-                </pre>
-              </div>
-            );
-          }
-
-          if (entry.kind === "init") {
-            return (
-              <div key={`${entry.ts}-init-${idx}`} className={grid}>
-                <span className={tsCell}>{time}</span>
-                <span className={cn(lblCell, "text-blue-700 dark:text-blue-300")}>init</span>
-                <span className={cn(contentCell, "text-blue-900 dark:text-blue-100")}>model: {entry.model}{entry.sessionId ? `, session: ${entry.sessionId}` : ""}</span>
-              </div>
-            );
-          }
-
-          if (entry.kind === "result") {
-            return (
-              <div key={`${entry.ts}-result-${idx}`} className={cn(grid, "gap-y-1 py-0.5")}>
-                <span className={tsCell}>{time}</span>
-                <span className={cn(lblCell, "text-cyan-700 dark:text-cyan-300")}>{t("result")}</span>
-                <span className={cn(contentCell, "text-cyan-900 dark:text-cyan-100")}>
-                  tokens in={formatTokens(entry.inputTokens)} out={formatTokens(entry.outputTokens)} cached={formatTokens(entry.cachedTokens)} cost=${entry.costUsd.toFixed(6)}
-                </span>
-                {(entry.subtype || entry.isError || entry.errors.length > 0) && (
-                  <div className={cn(expandCell, "text-red-600 dark:text-red-300 whitespace-pre-wrap break-words")}>
-                    subtype={entry.subtype || "unknown"} is_error={entry.isError ? "true" : "false"}
-                    {entry.errors.length > 0 ? ` errors=${entry.errors.join(" | ")}` : ""}
-                  </div>
-                )}
-                {entry.text && (
-                  <div className={cn(expandCell, "whitespace-pre-wrap break-words text-neutral-800 dark:text-neutral-100")}>{entry.text}</div>
-                )}
-              </div>
-            );
-          }
-
-          const rawText = entry.text;
-          const label =
-            entry.kind === "stderr" ? "stderr" :
-            entry.kind === "system" ? "system" :
-            "stdout";
-          const color =
-            entry.kind === "stderr" ? "text-red-600 dark:text-red-300" :
-            entry.kind === "system" ? "text-blue-600 dark:text-blue-300" :
-            "text-neutral-500";
-          return (
-            <div key={`${entry.ts}-raw-${idx}`} className={grid}>
-              <span className={tsCell}>{time}</span>
-              <span className={cn(lblCell, color)}>{t(label)}</span>
-              <span className={cn(contentCell, color)}>{rawText}</span>
-            </div>
-          )
-        })}
-        {logError && <div className="text-red-600 dark:text-red-300">{t(logError)}</div>}
-        <div ref={logEndRef} />
-      </div>
+      <RunTranscriptView
+        entries={transcript}
+        mode={transcriptMode}
+        density="comfortable"
+        streaming={isLive}
+        collapseStdout
+        emptyMessage={run.logRef ? "等待文字稿..." : t("No persisted transcript for this run.")}
+        className="bg-neutral-100 dark:bg-neutral-950 rounded-lg p-3 overflow-x-hidden"
+      />
+      {logError && <div className="text-red-600 dark:text-red-300">{t(logError)}</div>}
+      <div ref={logEndRef} />
 
       {(run.status === "failed" || run.status === "timed_out") && (
         <div className="rounded-lg border border-red-300 dark:border-red-500/30 bg-red-50 dark:bg-red-950/20 p-3 space-y-2">

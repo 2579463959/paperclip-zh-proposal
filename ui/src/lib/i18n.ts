@@ -378,6 +378,8 @@ const messages: Record<Locale, Record<string, string>> = {
     "Latest Run": "最近一次运行",
     "Recent Issues": "最近事项",
     "Configuration": "配置",
+    "Overview": "概览",
+    "List": "列表",
     "Manage": "管理",
     "Direct reports": "直接下属",
     "Input tokens": "输入 tokens",

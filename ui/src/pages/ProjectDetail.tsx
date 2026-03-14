@@ -10,6 +10,7 @@ import { assetsApi } from "../api/assets";
 import { usePanel } from "../context/PanelContext";
 import { useCompany } from "../context/CompanyContext";
 import { useBreadcrumbs } from "../context/BreadcrumbContext";
+import { useI18n } from "../context/I18nContext";
 import { queryKeys } from "../lib/queryKeys";
 import { ProjectProperties } from "../components/ProjectProperties";
 import { InlineEditor } from "../components/InlineEditor";
@@ -24,7 +25,7 @@ import { SlidersHorizontal } from "lucide-react";
 
 /* ── Top-level tab types ── */
 
-type ProjectTab = "overview" | "list";
+type ProjectTab = "overview" | "configuration" | "list";
 
 function resolveProjectTab(pathname: string, projectId: string): ProjectTab | null {
   const segments = pathname.split("/").filter(Boolean);
@@ -32,6 +33,7 @@ function resolveProjectTab(pathname: string, projectId: string): ProjectTab | nu
   if (projectsIdx === -1 || segments[projectsIdx + 1] !== projectId) return null;
   const tab = segments[projectsIdx + 2];
   if (tab === "overview") return "overview";
+  if (tab === "configuration" || tab === "configure") return "configuration";
   if (tab === "issues") return "list";
   return null;
 }
@@ -192,6 +194,7 @@ function ProjectIssuesList({ projectId, companyId }: { projectId: string; compan
 /* ── Main project page ── */
 
 export function ProjectDetail() {
+  const { t } = useI18n();
   const { companyPrefix, projectId, filter } = useParams<{
     companyPrefix?: string;
     projectId: string;
@@ -294,6 +297,8 @@ export function ProjectDetail() {
   const handleTabChange = (tab: ProjectTab) => {
     if (tab === "overview") {
       navigate(`/projects/${canonicalProjectRef}/overview`);
+    } else if (tab === "configuration") {
+      navigate(`/projects/${canonicalProjectRef}/configuration`);
     } else {
       navigate(`/projects/${canonicalProjectRef}/issues`);
     }
@@ -347,7 +352,17 @@ export function ProjectDetail() {
           }`}
           onClick={() => handleTabChange("overview")}
         >
-          Overview
+          {t("Overview")}
+        </button>
+        <button
+          className={`px-3 py-2 text-sm font-medium transition-colors border-b-2 ${
+            activeTab === "configuration"
+              ? "border-foreground text-foreground"
+              : "border-transparent text-muted-foreground hover:text-foreground"
+          }`}
+          onClick={() => handleTabChange("configuration")}
+        >
+          {t("Configuration")}
         </button>
         <button
           className={`px-3 py-2 text-sm font-medium transition-colors border-b-2 ${
@@ -357,7 +372,7 @@ export function ProjectDetail() {
           }`}
           onClick={() => handleTabChange("list")}
         >
-          List
+          {t("List")}
         </button>
       </div>
 
@@ -371,6 +386,10 @@ export function ProjectDetail() {
             return asset.contentPath;
           }}
         />
+      )}
+
+      {activeTab === "configuration" && (
+        <ProjectProperties project={project} onUpdate={(data) => updateProject.mutate(data)} />
       )}
 
       {activeTab === "list" && project?.id && resolvedCompanyId && (
